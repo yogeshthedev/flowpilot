@@ -36,10 +36,13 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const token = generateToken(user._id.toString());
 
+    res.cookie("token", token);
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
+      password: hashedPassword,
       token,
       message: "User created successfully",
     });
@@ -77,14 +80,42 @@ export const loginUser = async (req: Request, res: Response) => {
     //genearte token
 
     const token = generateToken(user._id.toString());
+    res.cookie("token", token);
 
     res.status(201).json({
       _id: user._id,
       email,
-      password,
       token,
     });
   } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    
+    const decodedUser = typeof req.user === "string" ? undefined : req.user;
+    const userId = decodedUser?.id || decodedUser?._id;
+    
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+  }
+
+    catch (error) {
     res.status(500).json({
       message: "Server error",
     });
